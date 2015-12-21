@@ -8,6 +8,8 @@ should be controller independent.
 
 This project uses the `python-odl` library to communicate with OpenDaylight.
 
+## Installing
+
 ### Downloading the source code
 
 ```
@@ -21,7 +23,7 @@ $ cd /usr/local/src/of-ng/stats-watchdog/
 Edit the file `stats-watchdog/settings/default.py` and configure the variables
 properly.
 
-## Installing
+### Install into your system
 
 This is just a daemon that runs in background to collect the stats. To install
 run the following command:
