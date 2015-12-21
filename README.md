@@ -14,6 +14,7 @@ This project uses the `python-odl` library to communicate with OpenDaylight.
 $ sudo mkdir -p /usr/local/src/of-ng/
 $ sudo git clone https://github.com/of-ng/stats-watchdog.git
 $ cd /usr/local/src/of-ng/stats-watchdog/
+```
 
 ### Edit your config file
 
