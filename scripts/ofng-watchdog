@@ -1,0 +1,105 @@
+#!/usr/bin/env python2.7
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Authors:
+#          - Beraldo Leal <beraldo AT ncc DOT unesp DOT br>
+#
+# -*- coding: utf-8 -*-
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
+# TODO: Better log system
+
+from odl.topology import ODLTopology
+from odl.instance import ODLInstance
+from odl.exceptions import ODLErrorOnGET, ODL404
+
+from settings.default import *
+
+from daemon import runner
+
+import os
+import sys
+import time
+import re
+import rrdtool
+
+steps = 60
+
+class WatchDog():
+    def __init__(self):
+        self.stdin_path = '/dev/null'
+        self.stdout_path = '/dev/tty'
+        self.stderr_path = '/dev/tty'
+        self.pidfile_path =  '/tmp/stats-watchdog.pid'
+        self.pidfile_timeout = 5
+
+    def create_rrd_for_flow(self, filename, flow):
+        directory = os.path.dirname(filename)
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+        if not os.path.isfile(filename):
+            rrdtool.create(filename,
+                           '--start', 'now', '--step', str(steps),
+                           'DS:bytes:COUNTER:360:U:U',
+                           'DS:packets:COUNTER:360:U:U',
+                           'RRA:LAST:0.5:1:1440')
+
+    def update_rrd(self, flow, bps, pps):
+        filename = str("%s/%s/%s/%s.rrd" % (rrd_path,
+                                            flow.table.node.id,
+                                            flow.table.id,
+                                            re.sub(r'#|\$|-|\*','', flow.id)))
+        if not os.path.isfile(filename):
+            self.create_rrd_for_flow(filename, flow)
+
+        # Update rrd
+        string = "N:%s:%s" % (bps, pps)
+        ret = rrdtool.update(filename, string)
+ 
+    def run(self):
+        credentials = (odl_user, odl_pass)
+        while True:
+            try:
+                odl = ODLInstance(odl_server, credentials)
+                nodes = odl.get_nodes()
+                for node in nodes.values():
+                    #print "Getting node ",  node.id
+                    tables = node.get_tables()
+                    for table in tables.values():
+                        flows = table.get_operational_flows().values()
+                        if len(flows) > 0:
+                            #print "   - Getting table ", table.id
+                            for flow in flows:
+                                #print "   - Getting flow ", flow.id
+                                current_stats = {'seconds': flow.get_stats_seconds(),
+                                                 'bytes': flow.get_byte_count(),
+                                                 'packets': flow.get_packet_count()}
+
+                                #print "   - ", current_stats
+
+                                # update rrd
+                                self.update_rrd(flow,
+                                                current_stats['bytes'],
+                                                current_stats['packets'])
+
+            except (ODLErrorOnGET, ODL404) as e:
+                print "Error on connection with ODL... waiting..."
+
+            time.sleep(steps)
+
+if __name__ == "__main__":
+    dog = WatchDog()
+    runner = runner.DaemonRunner(dog)
+    runner.do_action()
