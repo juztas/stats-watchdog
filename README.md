@@ -10,17 +10,24 @@ This project uses the `python-odl` library to communicate with OpenDaylight.
 
 ## Installing
 
+### Dependencies
+
+```
+$ sudo apt-get install python-dev librrd-dev
+```
+
 ### Downloading the source code
 
 ```
 $ sudo mkdir -p /usr/local/src/of-ng/
+$ cd /usr/local/src/of-ng/
 $ sudo git clone https://github.com/of-ng/stats-watchdog.git
-$ cd /usr/local/src/of-ng/stats-watchdog/
+$ cd stats-watchdog
 ```
 
 ### Edit your config file
 
-Edit the file `stats-watchdog/settings/default.py` and configure the variables
+Edit the file `settings/default.py` and configure the variables
 properly.
 
 ### Install into your system
