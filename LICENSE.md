@@ -1,6 +1,7 @@
 MIT License
 
 Copyright (c) 2015-2016 São Paulo State University (Unesp), Center for Scientific Computing (NCC), São Paulo
+
 Copyright (c) 2015-2016 California Institute of Technology (Caltech)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
